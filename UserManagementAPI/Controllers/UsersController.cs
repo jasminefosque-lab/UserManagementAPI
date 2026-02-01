@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Concurrent;
 using UserManagementAPI.Models;
 
 namespace UserManagementAPI.Controllers;
@@ -7,8 +8,9 @@ namespace UserManagementAPI.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private static List<User> _users = new();
+    private static readonly ConcurrentBag<User> _users = new();
     private static int _nextId = 1;
+    private static readonly object _lockObject = new();
 
     // GET: api/users
     [HttpGet]
@@ -33,12 +35,16 @@ public class UsersController : ControllerBase
     [HttpPost]
     public ActionResult<User> CreateUser([FromBody] User user)
     {
-        user.Id = _nextId++;
+        lock (_lockObject)
+        {
+            user.Id = _nextId++;
+        }
         _users.Add(user);
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
     }
 
     // PUT: api/users/{id}
+    // Note: The id from the route parameter is used; any Id value in the request body is ignored
     [HttpPut("{id}")]
     public IActionResult UpdateUser(int id, [FromBody] User updatedUser)
     {
@@ -64,7 +70,14 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
-        _users.Remove(user);
+        // Remove from ConcurrentBag by creating a new bag without the deleted user
+        var updatedUsers = _users.Where(u => u.Id != id).ToList();
+        while (_users.TryTake(out _)) { }
+        foreach (var u in updatedUsers)
+        {
+            _users.Add(u);
+        }
+
         return NoContent();
     }
 }
