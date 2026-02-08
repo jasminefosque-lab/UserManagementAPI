@@ -156,6 +156,35 @@ dotnet watch run
 - Minimal APIs
 - Swashbuckle.AspNetCore (Swagger/OpenAPI)
 
+## Middleware
+
+This API includes several middleware components that enhance reliability, security, and observability:
+
+### Error Handling
+A global error-handling middleware captures unhandled exceptions and returns a consistent JSON error response. This ensures the API responds gracefully when unexpected errors occur.
+
+### Authentication
+A simple authentication middleware validates incoming requests using a static Bearer token.  
+Clients must include the following header to access protected endpoints:
+
+Authorization: Bearer mysecrettoken
+
+Requests without a valid token receive a 401 Unauthorized response.
+
+### Logging
+A lightweight logging middleware records each request’s method, path, and response status code.  
+This helps with debugging and provides visibility into API usage.
+
+## Swagger Security
+
+Swagger is configured with a Bearer token security definition.  
+You can authenticate directly in Swagger by clicking the **Authorize** button and entering:
+
+Bearer mysecrettoken
+
+Once authorized, Swagger automatically includes the token in all requests made through the UI.
+
+
 ## License
 
 This project is provided as-is for educational and demonstration purposes.
